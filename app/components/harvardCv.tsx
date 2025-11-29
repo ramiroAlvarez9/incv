@@ -1,5 +1,5 @@
 import { type JSX } from "react";
-import { type CV } from "@/schemas/cv";
+import { type CV } from "../schemas/cv";
 
 interface HarvardCVProps {
   cvData: CV;
