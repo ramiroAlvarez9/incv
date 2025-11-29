@@ -9,7 +9,7 @@ import {
   TabStopType,
   TabStopPosition,
 } from "docx";
-import { type CV } from "@/schemas/cv";
+import { type CV } from "../schemas/cv";
 
 const formatDate = (dateStr: string): string => {
   if (dateStr.toLowerCase() === "present") return "Present";
@@ -261,7 +261,7 @@ export const generateHarvardCV = (cvData: CV): Document => {
                       left: 720,
                     },
                     spacing: {
-                      after: descIndex === exp.description.length - 1 ? 120 : 120,
+                      after: exp.description?.length && descIndex === exp.description.length - 1 ? 120 : 120,
                     },
                   }),
                 );
