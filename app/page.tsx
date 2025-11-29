@@ -1,8 +1,7 @@
 "use client";
 import "./globals.css";
 import { useState, useRef, useEffect } from "react";
-import type { CV } from "./schemas/cv";
-import { CVSchema } from "./schemas/cv";
+import { CVSchema, type CV } from "./schemas/cv";
 import * as v from "valibot";
 import HarvardCV from "./components/harvardCv";
 import { downloadDocx } from "./utils/docxGenerator";
