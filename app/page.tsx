@@ -1,65 +1,312 @@
-import Image from "next/image";
+"use client";
+import "./globals.css";
+import { useState, useRef, useEffect } from "react";
+import type { CV } from "./schemas/cv";
+import { CVSchema } from "./schemas/cv";
+import * as v from "valibot";
+import HarvardCV from "./components/harvardCv";
+import { downloadDocx } from "./utils/docxGenerator";
 
-export default function Home() {
+export default function App() {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const nativeDialogRef = useRef<HTMLDialogElement>(null);
+  const [activeTab, setActiveTab] = useState<"upload" | "harvard-cv">("upload");
+  const [isLoading, setIsLoading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState<string>("");
+  const [cvData, setCvData] = useState<CV | null>(null);
+
+  const [modalTitle, setModalTitle] = useState("How the extractor works");
+  const [modalMessage, setModalMessage] = useState(
+    "Drop or select your LinkedIn PDF resume, let the extractor parse the structured data, and preview it in the Harvard CV layout before downloading the DOCX template.",
+  );
+  const [modalSteps, setModalSteps] = useState([
+    "Export your LinkedIn profile as a PDF resume from LinkedIn.",
+    "Use the Upload tab to drag the file or click the drop zone and select it manually.",
+    "Wait for the server to parse the file, then jump to the Harvard CV tab.",
+    "When you are ready, click the download button to save the Harvard CV-themed DOCX.",
+  ]);
+
+  const handleFileUpload = async (file: File) => {
+    if (!file.type.includes("pdf")) {
+      setUploadStatus("Please select a PDF file");
+      return;
+    }
+
+    setIsLoading(true);
+    setUploadStatus("Starting upload...");
+
+    try {
+      const formData = new FormData();
+      formData.append("pdf", file);
+      const response = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!response.body) {
+        throw new Error("No response body");
+      }
+
+      const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+      let buffer = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+
+        buffer += value;
+        const lines = buffer.split("\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            const eventData = JSON.parse(line.substring(6));
+            if (eventData.error) {
+              if (eventData.error === "Too many requests") {
+                openNativeModal(
+                  "Too Many Requests",
+                  "You have made too many requests for this IP address. The limit will be reset in 24 hours.",
+                  [],
+                );
+                throw new Error("Too many requests");
+              }
+              throw new Error(eventData.error);
+            }
+
+            if (eventData.message) {
+              setUploadStatus(eventData.message);
+            }
+
+            if (eventData.data) {
+              const parsedCv = v.parse(CVSchema, eventData.data);
+              localStorage.setItem("parsedCv", JSON.stringify(parsedCv));
+              setCvData(parsedCv);
+              setActiveTab("harvard-cv");
+              setUploadStatus("PDF processed successfully!");
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      const errorMessage = error instanceof Error ? error.message : "Upload failed";
+      setUploadStatus(`Error: ${errorMessage}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files[0]) {
+      handleFileUpload(files[0]);
+    }
+  };
+
+  const handleDownloadDocx = async () => {
+    if (!cvData) return;
+    try {
+      await downloadDocx(cvData, `${cvData.name.replace(/\s+/g, "_")}_Harvard_CV.docx`);
+    } catch (error) {
+      console.error("Error generating DOCX:", error);
+    }
+  };
+
+  const openNativeModal = (
+    title = "How the extractor works",
+    message = "Drop or select your LinkedIn PDF resume, let the extractor parse the structured data, and preview it in the Harvard CV layout before downloading the DOCX template.",
+    steps = [
+      "Export your LinkedIn profile as a PDF resume from LinkedIn.",
+      "Use the Upload tab to drag the file or click the drop zone and select it manually.",
+      "Wait for the server to parse the file, then inspect the parsed data or jump to the Harvard CV tab.",
+      "When you are ready, click the download button to save the Harvard CV-themed DOCX.",
+    ],
+  ) => {
+    setModalTitle(title);
+    setModalMessage(message);
+    setModalSteps(steps);
+    if (nativeDialogRef.current && !nativeDialogRef.current.open) {
+      nativeDialogRef.current.showModal();
+    }
+  };
+
+  const closeNativeModal = () => {
+    if (nativeDialogRef.current) {
+      nativeDialogRef.current.close();
+    }
+  };
+
+  useEffect(() => {
+    try {
+      const storedCv = localStorage.getItem("parsedCv");
+      if (storedCv) {
+        const parsedCv = JSON.parse(storedCv);
+        if (v.safeParse(CVSchema, parsedCv).success) {
+          setCvData(parsedCv);
+          setActiveTab("harvard-cv");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to parse CV from localStorage", error);
+      localStorage.removeItem("parsedCv");
+    }
+  }, []);
+
+
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className="w-screen min-h-screen bg-gray-800 text-white p-6">
+      <div className="max-w-4xl mx-auto">
+        <div className="flex flex-wrap justify-center gap-3 mb-4">
+          <button
+            onClick={() => openNativeModal()}
+            className="cursor-pointer border border-emerald-500 text-emerald-300 px-4 py-2 rounded hover:bg-emerald-500/10 transition-colors"
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            How it works
+          </button>
         </div>
-      </main>
+        <h1 className="p-8 text-3xl font-bold mb-8 text-center">LinkedIn PDF to Harvard CV</h1>
+        <div className="flex mb-8 border-b border-gray-700">
+          <button
+            onClick={() => setActiveTab("upload")}
+            className={`cursor-pointer px-6 py-3 font-medium transition-colors ${activeTab === "upload" ? "border-b-2 border-blue-500 text-blue-400" : "text-gray-400 hover:text-white"
+              }`}
+          >
+            Upload PDF
+          </button>
+          <button
+            onClick={() => setActiveTab("harvard-cv")}
+            className={`cursor-pointer px-6 py-3 font-medium transition-all duration-200 rounded-t-lg ${activeTab === "harvard-cv"
+              ? "border-b-2 border-emerald-500 text-emerald-400 bg-emerald-500/10 shadow-lg"
+              : "text-gray-400 hover:text-white hover:bg-gray-700/50 hover:shadow-md"
+              }`}
+          >
+            🎓 Harvard CV
+          </button>
+        </div>
+        {activeTab === "upload" && (
+          <div className="bg-gray-800 rounded-lg p-8">
+            <h2 className="text-xl font-semibold mb-6">Upload LinkedIn PDF Resume</h2>
+
+            {isLoading ? (
+              <div className="text-center py-12">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mb-4"></div>
+                <p className="text-gray-300">
+                  {uploadStatus || "Processing..."}
+                </p>
+              </div>
+            ) : (
+              <div>
+                <div
+                  className="border-2 border-dashed border-gray-600 rounded-lg p-8 text-center cursor-pointer hover:border-gray-500 transition-colors"
+                  onDrop={(e: React.DragEvent<HTMLDivElement>) => {
+                    e.preventDefault();
+                    const files = e.dataTransfer?.files;
+                    if (files && files[0]) {
+                      handleFileUpload(files[0]);
+                    }
+                  }}
+                  onDragOver={(e: React.DragEvent<HTMLDivElement>) => {
+                    e.preventDefault();
+                  }}
+                  onClick={() => {
+                    fileInputRef.current?.click();
+                  }}
+                >
+                  <div className="text-4xl mb-4">📄</div>
+                  <p className="text-lg font-medium mb-2">Choose PDF File</p>
+                  <p className="text-gray-400 mb-4">Drop your LinkedIn PDF resume here or click to select</p>
+                  <input ref={fileInputRef} type="file" accept=".pdf" onChange={handleFileInput} className="hidden" />
+                </div>
+                {uploadStatus && !isLoading && (
+                  <div className="mt-4 text-center">
+                    <p
+                      className={
+                        uploadStatus.includes("Error") || uploadStatus.includes("failed")
+                          ? "text-red-400"
+                          : "text-green-400"
+                      }
+                    >
+                      {uploadStatus}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            <footer className="mt-8 text-center text-gray-500">
+              <p>
+                100% Bug-Free ( Maybe) - Made by{" "}
+                <a
+                  href="https://github.com/ramiroAlvarez9"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-emerald-400 hover:underline"
+                >
+                  Ramiro Alvarez
+                </a>
+              </p>
+            </footer>
+          </div>
+        )}
+
+        {activeTab === "harvard-cv" && (
+          <div className="bg-gray-800 rounded-lg p-8">
+            <div className="flex justify-center items-center p-4">
+              <button
+                onClick={handleDownloadDocx}
+                disabled={!cvData}
+                className="cursor-pointer px-4 py-2 bg-emerald-600 lg:hover:bg-emerald-700 text-white font-medium rounded-lg transition-all duration-200 shadow-md lg:hover:shadow-lg lg:hover:scale-105 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              >
+                📥 Download .docx
+              </button>
+            </div>
+            <div className="flex justify-center">
+              <div className="bg-white shadow-lg w-full max-w-full p-0">
+                {cvData ? (
+                  <HarvardCV cvData={cvData} />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500 p-8">
+                    <p>No data available yet. Upload a LinkedIn PDF to generate the Harvard CV.</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+      <dialog
+        ref={nativeDialogRef}
+        className=" m-auto w-3/4 md:w-full max-w-2xl rounded-3xl border border-gray-700 bg-gray-900 p-10 text-white shadow-2xl"
+        aria-modal="true"
+      >
+        <div className="p-4 flex items-start justify-between gap-4">
+          <h2 className="text-2xl font-semibold">{modalTitle}</h2>
+          <button
+            className="cursor-pointer text-gray-400 hover:text-white"
+            onClick={closeNativeModal}
+            aria-label="Close native help dialog"
+          >
+            ✕
+          </button>
+        </div>
+        <p className="p-4 text-gray-300 mt-4">{modalMessage}</p>
+        {modalSteps.length > 0 && (
+          <ol className="p-4 mt-4 list-decimal list-inside space-y-3 text-gray-200">
+            {modalSteps.map((step, index) => (
+              <li key={`native-${index}`}>{step}</li>
+            ))}
+          </ol>
+        )}
+        <div className="p-4 mt-6 flex justify-end">
+          <button
+            className="cursor-pointer rounded-full bg-emerald-500 px-6 py-2 font-semibold text-black hover:bg-emerald-400 transition-colors"
+            onClick={closeNativeModal}
+          >
+            Got it
+          </button>
+        </div>
+      </dialog>
     </div>
   );
 }
