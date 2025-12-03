@@ -2,8 +2,8 @@ import { createClient, SupabaseClient } from "@supabase/supabase-js";
 
 type RateLimitOptions = {
   route: string;
-  limit: number; // max requests per window
-  windowSeconds: number; // window size
+  limit: number;
+  windowSeconds: number;
 };
 
 let supabase: SupabaseClient | null = null;
@@ -28,11 +28,9 @@ function getClientIp(req: Request): string {
   }
   const real = hdr("x-real-ip") || hdr("cf-connecting-ip") || hdr("fly-client-ip");
   if (real) return real;
-  // Bun.serve doesn't expose remoteAddr yet; fall back
   return "127.0.0.1";
 }
 
-// Supabase table: rate_limit_requests (id uuid default gen_random_uuid(), ip text, route text, ts timestamptz default now())
 export async function enforceRateLimit(req: Request, opts: RateLimitOptions) {
   const ip = getClientIp(req);
   const now = Date.now();
@@ -40,7 +38,6 @@ export async function enforceRateLimit(req: Request, opts: RateLimitOptions) {
 
   const client = getSupabase();
 
-  // If Supabase is not configured, allow by default (dev mode)
   if (!client) {
     return {
       allowed: true,
@@ -51,7 +48,6 @@ export async function enforceRateLimit(req: Request, opts: RateLimitOptions) {
     } as const;
   }
 
-  // Count recent requests within window
   const { count, error: countErr } = await client
     .from("rate_limit_requests")
     .select("id", { count: "exact", head: true })
@@ -60,7 +56,6 @@ export async function enforceRateLimit(req: Request, opts: RateLimitOptions) {
     .gt("ts", windowStart);
 
   if (countErr) {
-    // Fail open to avoid blocking users due to DB hiccups
     return {
       allowed: true,
       ip,
@@ -80,7 +75,6 @@ export async function enforceRateLimit(req: Request, opts: RateLimitOptions) {
     } as const;
   }
 
-  // Record this request
   const { error: insertErr } = await client
     .from("rate_limit_requests")
     .insert({ ip, route: opts.route, ts: new Date().toISOString() });

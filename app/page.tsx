@@ -5,25 +5,15 @@ import { CVSchema, type CV } from "./schemas/cv";
 import * as v from "valibot";
 import HarvardCV from "./components/harvardCv";
 import { downloadDocx } from "./utils/docxGenerator";
+import InfoModal, { type InfoModalHandle } from "./components/InfoModal";
 
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const nativeDialogRef = useRef<HTMLDialogElement>(null);
+  const infoModalRef = useRef<InfoModalHandle>(null);
   const [activeTab, setActiveTab] = useState<"upload" | "harvard-cv">("upload");
   const [isLoading, setIsLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string>("");
   const [cvData, setCvData] = useState<CV | null>(null);
-
-  const [modalTitle, setModalTitle] = useState("How the extractor works");
-  const [modalMessage, setModalMessage] = useState(
-    "Drop or select your LinkedIn PDF resume, let the extractor parse the structured data, and preview it in the Harvard CV layout before downloading the DOCX template.",
-  );
-  const [modalSteps, setModalSteps] = useState([
-    "Export your LinkedIn profile as a PDF resume from LinkedIn.",
-    "Use the Upload tab to drag the file or click the drop zone and select it manually.",
-    "Wait for the server to parse the file, then jump to the Harvard CV tab.",
-    "When you are ready, click the download button to save the Harvard CV-themed DOCX.",
-  ]);
 
   const handleFileUpload = async (file: File) => {
     if (!file.type.includes("pdf")) {
@@ -62,10 +52,10 @@ export default function App() {
             const eventData = JSON.parse(line.substring(6));
             if (eventData.error) {
               if (eventData.error === "Too many requests") {
-                openNativeModal(
+                infoModalRef.current?.open(
                   "Too Many Requests",
                   "You have made too many requests for this IP address. The limit will be reset in 24 hours.",
-                  [],
+                  null,
                 );
                 throw new Error("Too many requests");
               }
@@ -112,30 +102,6 @@ export default function App() {
     }
   };
 
-  const openNativeModal = (
-    title = "How the extractor works",
-    message = "Drop or select your LinkedIn PDF resume, let the extractor parse the structured data, and preview it in the Harvard CV layout before downloading the DOCX template.",
-    steps = [
-      "Export your LinkedIn profile as a PDF resume from LinkedIn.",
-      "Use the Upload tab to drag the file or click the drop zone and select it manually.",
-      "Wait for the server to parse the file, then inspect the parsed data or jump to the Harvard CV tab.",
-      "When you are ready, click the download button to save the Harvard CV-themed DOCX.",
-    ],
-  ) => {
-    setModalTitle(title);
-    setModalMessage(message);
-    setModalSteps(steps);
-    if (nativeDialogRef.current && !nativeDialogRef.current.open) {
-      nativeDialogRef.current.showModal();
-    }
-  };
-
-  const closeNativeModal = () => {
-    if (nativeDialogRef.current) {
-      nativeDialogRef.current.close();
-    }
-  };
-
   useEffect(() => {
     try {
       const storedCv = localStorage.getItem("parsedCv");
@@ -159,7 +125,7 @@ export default function App() {
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-wrap justify-center gap-3 mb-4">
           <button
-            onClick={() => openNativeModal()}
+            onClick={() => infoModalRef.current?.open()}
             className="cursor-pointer border border-emerald-500 text-emerald-300 px-4 py-2 rounded hover:bg-emerald-500/10 transition-colors"
           >
             How it works
@@ -274,38 +240,7 @@ export default function App() {
           </div>
         )}
       </div>
-      <dialog
-        ref={nativeDialogRef}
-        className=" m-auto w-3/4 md:w-full max-w-2xl rounded-3xl border border-gray-700 bg-gray-900 p-10 text-white shadow-2xl"
-        aria-modal="true"
-      >
-        <div className="p-4 flex items-start justify-between gap-4">
-          <h2 className="text-2xl font-semibold">{modalTitle}</h2>
-          <button
-            className="cursor-pointer text-gray-400 hover:text-white"
-            onClick={closeNativeModal}
-            aria-label="Close native help dialog"
-          >
-            ✕
-          </button>
-        </div>
-        <p className="p-4 text-gray-300 mt-4">{modalMessage}</p>
-        {modalSteps.length > 0 && (
-          <ol className="p-4 mt-4 list-decimal list-inside space-y-3 text-gray-200">
-            {modalSteps.map((step, index) => (
-              <li key={`native-${index}`}>{step}</li>
-            ))}
-          </ol>
-        )}
-        <div className="p-4 mt-6 flex justify-end">
-          <button
-            className="cursor-pointer rounded-full bg-emerald-500 px-6 py-2 font-semibold text-black hover:bg-emerald-400 transition-colors"
-            onClick={closeNativeModal}
-          >
-            Got it
-          </button>
-        </div>
-      </dialog>
+      <InfoModal ref={infoModalRef} />
     </div>
   );
 }
