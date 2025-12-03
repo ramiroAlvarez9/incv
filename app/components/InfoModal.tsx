@@ -36,7 +36,11 @@ const defaultContent = {
 
 export default forwardRef<InfoModalHandle, {}>(function InfoModal(_props, ref) {
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [content, setContent] = useState(defaultContent);
+  const [content, setContent] = useState<{
+    title: string;
+    message: string;
+    steps: ReactNode;
+  }>(defaultContent);
 
   const closeModal = () => {
     if (dialogRef.current) {
