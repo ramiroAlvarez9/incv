@@ -1,5 +1,5 @@
 import { type JSX } from "react";
-import { type CV } from "../schemas/cv";
+import { type CV } from "@/app/schemas/cv";
 
 interface HarvardCVProps {
   cvData: CV;
@@ -61,7 +61,10 @@ function HarvardCV({ cvData }: HarvardCVProps): JSX.Element {
             </div>
             <ul className="mt-2 ml-6 space-y-1">
               {exp.description?.map((description, index) => (
-                <li key={`${exp.company}+${index}`} className="text-sm list-disc">
+                <li
+                  key={`${exp.company}+${index}`}
+                  className="text-sm list-disc"
+                >
                   {description}
                 </li>
               ))}
@@ -71,16 +74,20 @@ function HarvardCV({ cvData }: HarvardCVProps): JSX.Element {
       </div>
 
       <div className="mb-6">
-        <h2 className="text-center text-sm font-bold mb-3">Technical Skills & Languages</h2>
+        <h2 className="text-center text-sm font-bold mb-3">
+          Technical Skills & Languages
+        </h2>
         <div className="ml-2 space-y-2">
           <div className="text-sm">
-            <span className="font-bold">Technical Skills:</span> {cvData.skills.mainSkills.join(", ")}
+            <span className="font-bold">Technical Skills:</span>{" "}
+            {cvData.skills.mainSkills.join(", ")}
           </div>
           <div className="text-sm">
             <span className="font-bold">Languages:</span>{" "}
             {cvData.skills.languages.map((lang, index) => (
               <span key={index}>
-                {lang.name} ({lang.level}){index < cvData.skills.languages.length - 1 ? ", " : ""}
+                {lang.name} ({lang.level})
+                {index < cvData.skills.languages.length - 1 ? ", " : ""}
               </span>
             ))}
           </div>

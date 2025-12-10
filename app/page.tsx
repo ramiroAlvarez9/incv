@@ -1,15 +1,14 @@
 "use client";
 import "./globals.css";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, } from "react";
 import { CVSchema, type CV } from "./schemas/cv";
 import * as v from "valibot";
-import HarvardCV from "./components/harvardCv";
+import HarvardCV from "@/components/harvardCv";
 import { downloadDocx } from "./utils/docxGenerator";
-import InfoModal, { type InfoModalHandle } from "./components/InfoModal";
+import InfoModal from "@/components/InfoModal";
 
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const infoModalRef = useRef<InfoModalHandle>(null);
   const [activeTab, setActiveTab] = useState<"upload" | "harvard-cv">("upload");
   const [isLoading, setIsLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string>("");
@@ -36,7 +35,9 @@ export default function App() {
         throw new Error("No response body");
       }
 
-      const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
+      const reader = response.body
+        .pipeThrough(new TextDecoderStream())
+        .getReader();
       let buffer = "";
 
       while (true) {
@@ -52,11 +53,11 @@ export default function App() {
             const eventData = JSON.parse(line.substring(6));
             if (eventData.error) {
               if (eventData.error === "Too many requests") {
-                infoModalRef.current?.open(
-                  "Too Many Requests",
-                  "You have made too many requests for this IP address. The limit will be reset in 24 hours.",
-                  null,
-                );
+                // openInfoModal(
+                // "Too Many Requests",
+                // "You have made too many requests for this IP address. The limit will be reset in 24 hours.",
+                // undefined,
+                // );
                 throw new Error("Too many requests");
               }
               throw new Error(eventData.error);
@@ -78,13 +79,13 @@ export default function App() {
       }
     } catch (error) {
       console.error(error);
-      const errorMessage = error instanceof Error ? error.message : "Upload failed";
+      const errorMessage =
+        error instanceof Error ? error.message : "Upload failed";
       setUploadStatus(`Error: ${errorMessage}`);
     } finally {
       setIsLoading(false);
     }
   };
-
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -96,7 +97,10 @@ export default function App() {
   const handleDownloadDocx = async () => {
     if (!cvData) return;
     try {
-      await downloadDocx(cvData, `${cvData.name.replace(/\s+/g, "_")}_Harvard_CV.docx`);
+      await downloadDocx(
+        cvData,
+        `${cvData.name.replace(/\s+/g, "_")}_Harvard_CV.docx`,
+      );
     } catch (error) {
       console.error("Error generating DOCX:", error);
     }
@@ -118,24 +122,26 @@ export default function App() {
     }
   }, []);
 
-
-
   return (
     <div className="w-screen min-h-screen bg-gray-800 text-white p-6">
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-wrap justify-center gap-3 mb-4">
           <button
-            onClick={() => infoModalRef.current?.open()}
+            onClick={() => null}
             className="cursor-pointer border border-emerald-500 text-emerald-300 px-4 py-2 rounded hover:bg-emerald-500/10 transition-colors"
           >
             How it works
           </button>
         </div>
-        <h1 className="p-8 text-3xl font-bold mb-8 text-center">LinkedIn PDF to Harvard CV</h1>
+        <h1 className="p-8 text-3xl font-bold mb-8 text-center">
+          LinkedIn PDF to Harvard CV
+        </h1>
         <div className="flex mb-8 border-b border-gray-700">
           <button
             onClick={() => setActiveTab("upload")}
-            className={`cursor-pointer px-6 py-3 font-medium transition-colors ${activeTab === "upload" ? "border-b-2 border-blue-500 text-blue-400" : "text-gray-400 hover:text-white"
+            className={`cursor-pointer px-6 py-3 font-medium transition-colors ${activeTab === "upload"
+              ? "border-b-2 border-blue-500 text-blue-400"
+              : "text-gray-400 hover:text-white"
               }`}
           >
             Upload PDF
@@ -152,7 +158,9 @@ export default function App() {
         </div>
         {activeTab === "upload" && (
           <div className="bg-gray-800 rounded-lg p-8">
-            <h2 className="text-xl font-semibold mb-6">Upload LinkedIn PDF Resume</h2>
+            <h2 className="text-xl font-semibold mb-6">
+              Upload LinkedIn PDF Resume
+            </h2>
 
             {isLoading ? (
               <div className="text-center py-12">
@@ -181,14 +189,23 @@ export default function App() {
                 >
                   <div className="text-4xl mb-4">📄</div>
                   <p className="text-lg font-medium mb-2">Choose PDF File</p>
-                  <p className="text-gray-400 mb-4">Drop your LinkedIn PDF resume here or click to select</p>
-                  <input ref={fileInputRef} type="file" accept=".pdf" onChange={handleFileInput} className="hidden" />
+                  <p className="text-gray-400 mb-4">
+                    Drop your LinkedIn PDF resume here or click to select
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".pdf"
+                    onChange={handleFileInput}
+                    className="hidden"
+                  />
                 </div>
                 {uploadStatus && !isLoading && (
                   <div className="mt-4 text-center">
                     <p
                       className={
-                        uploadStatus.includes("Error") || uploadStatus.includes("failed")
+                        uploadStatus.includes("Error") ||
+                          uploadStatus.includes("failed")
                           ? "text-red-400"
                           : "text-green-400"
                       }
@@ -232,7 +249,10 @@ export default function App() {
                   <HarvardCV cvData={cvData} />
                 ) : (
                   <div className="flex items-center justify-center h-full text-gray-500 p-8">
-                    <p>No data available yet. Upload a LinkedIn PDF to generate the Harvard CV.</p>
+                    <p>
+                      No data available yet. Upload a LinkedIn PDF to generate
+                      the Harvard CV.
+                    </p>
                   </div>
                 )}
               </div>
@@ -240,7 +260,31 @@ export default function App() {
           </div>
         )}
       </div>
-      <InfoModal ref={infoModalRef} />
+
+      <InfoModal
+        isOpen={true}
+        onClose={() => null}
+        title={"How the extractor works"}
+      >
+        <>
+          <div>Drop or select your LinkedIn PDF resume, let the extractor parse the structured data, and preview it in the Harvard CV layout before downloading the DOCX template.</div>
+          <ol className="p-4 mt-4 list-decimal list-inside space-y-3 text-gray-200">
+            <li>Export your LinkedIn profile as a PDF resume from LinkedIn.</li>
+            <li>
+              Use the Upload tab to drag the file or click the drop zone and select
+              it manually.
+            </li>
+            <li>
+              Wait for the server to parse the file, then jump to the Harvard CV tab.
+            </li>
+            <li>
+              When you are ready, click the download button to save the Harvard
+              CV-themed DOCX.
+            </li>
+          </ol>
+        </>
+
+      </InfoModal>
     </div>
   );
 }
