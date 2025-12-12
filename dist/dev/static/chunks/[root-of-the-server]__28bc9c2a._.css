@@ -1436,6 +1436,14 @@
     text-align: center;
   }
 
+  .text-end {
+    text-align: end;
+  }
+
+  .text-start {
+    text-align: start;
+  }
+
   .font-sans {
     font-family: var(--font-sans);
   }

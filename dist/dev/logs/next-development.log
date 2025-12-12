@@ -1,11 +1,18 @@
-[00:00:00.700] Server  LOG      ✓ Ready in 497ms
-[00:00:03.044] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:00:03.186] Browser ERROR   uncaughtError: Error: React.Children.only expected to receive a single React element child.
-[00:05:15.296] Server  WARN     ⚠ Fast Refresh had to perform a full reload due to a runtime error.
-[00:05:15.359] Server  LOG      ✓ Compiled in 42ms
-[00:05:15.548] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
-[00:05:15.747] Browser ERROR   Invalid prop `%s` supplied to `React.Fragment`. React.Fragment can only have `key`, `ref`, and `children` props. id
-[00:05:15.747] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:05:15.747] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-[00:05:20.330] Server  LOG      ✓ Compiled in 45ms
-[00:05:20.380] Browser ERROR   Invalid prop `%s` supplied to `React.Fragment`. React.Fragment can only have `key`, `ref`, and `children` props. id
+[00:00:00.960] Server  LOG      ✓ Ready in 681ms
+[00:01:15.279] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:01:16.499] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:01:16.500] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:04:27.249] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:04:54.052] Server  ERROR   PDF processing error: TypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed
+[00:07:33.465] Server  LOG      ✓ Compiled in 147ms
+[00:07:38.931] Server  LOG     times used 3
+[00:07:39.074] Browser ERROR   {}
+[00:07:39.074] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:07:39.074] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:08:10.985] Server  LOG     times used 3
+[00:08:11.126] Browser ERROR   {}
+[00:08:11.126] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:08:11.126] Browser WARN    Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+[00:08:38.635] Server  LOG     times used 1
+[00:08:49.702] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:09:09.881] Server  ERROR   PDF processing error: TypeError [ERR_INVALID_STATE]: Invalid state: Controller is already closed

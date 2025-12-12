@@ -1,4 +1,3 @@
-import { pdfToText } from "pdf-ts";
 import * as v from "valibot";
 import { generateText } from "ai";
 import { createDeepSeek } from "@ai-sdk/deepseek";

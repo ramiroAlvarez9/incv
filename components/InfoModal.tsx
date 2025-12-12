@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { type ReactNode } from "react";
+import { ReactNode } from "react";
 
 interface InfoModalProps {
   isOpen: boolean;
@@ -21,7 +21,7 @@ export default function InfoModal({
   isOpen,
   onClose,
   title,
-  children,
+  children
 }: InfoModalProps) {
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -35,7 +35,7 @@ export default function InfoModal({
         <DialogFooter>
           <Button
             onClick={onClose}
-            className="bg-emerald-500 text-black hover:bg-emerald-400"
+            className="bg-emerald-500 text-black hover:bg-emerald-400 cursor-pointer"
           >
             Got it
           </Button>

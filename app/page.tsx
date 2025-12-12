@@ -1,11 +1,15 @@
 "use client";
-import "./globals.css";
+"./globals.css";
 import { useState, useRef, useEffect, } from "react";
 import { CVSchema, type CV } from "./schemas/cv";
 import * as v from "valibot";
 import HarvardCV from "@/components/harvardCv";
 import { downloadDocx } from "./utils/docxGenerator";
 import InfoModal from "@/components/InfoModal";
+import Steps from "@/components/Steps";
+import TooManyRequestsMessage from "@/components/TooManyRequestsMessage";
+
+type ModalState = "how-it-works" | "too-many-request"
 
 export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -13,6 +17,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   const [uploadStatus, setUploadStatus] = useState<string>("");
   const [cvData, setCvData] = useState<CV | null>(null);
+  const [modal, setModal] = useState<{ isOpen: boolean; variant: ModalState }>({ isOpen: false, variant: "how-it-works" });
 
   const handleFileUpload = async (file: File) => {
     if (!file.type.includes("pdf")) {
@@ -53,11 +58,7 @@ export default function App() {
             const eventData = JSON.parse(line.substring(6));
             if (eventData.error) {
               if (eventData.error === "Too many requests") {
-                // openInfoModal(
-                // "Too Many Requests",
-                // "You have made too many requests for this IP address. The limit will be reset in 24 hours.",
-                // undefined,
-                // );
+                setModal({ isOpen: true, variant: "too-many-request" });
                 throw new Error("Too many requests");
               }
               throw new Error(eventData.error);
@@ -127,7 +128,7 @@ export default function App() {
       <div className="max-w-4xl mx-auto">
         <div className="flex flex-wrap justify-center gap-3 mb-4">
           <button
-            onClick={() => null}
+            onClick={() => setModal({ isOpen: true, variant: "how-it-works" })}
             className="cursor-pointer border border-emerald-500 text-emerald-300 px-4 py-2 rounded hover:bg-emerald-500/10 transition-colors"
           >
             How it works
@@ -218,7 +219,7 @@ export default function App() {
             )}
             <footer className="mt-8 text-center text-gray-500">
               <p>
-                100% Bug-Free ( Maybe) - Made by{" "}
+                Made by{" "}
                 <a
                   href="https://github.com/ramiroAlvarez9"
                   target="_blank"
@@ -262,29 +263,12 @@ export default function App() {
       </div>
 
       <InfoModal
-        isOpen={true}
-        onClose={() => null}
-        title={"How the extractor works"}
+        isOpen={modal.isOpen}
+        onClose={() => setModal(prev => ({...prev, isOpen: false }))}
+        title={modal.variant === "how-it-works" ? "How the extractor works" : "Too Many Requests"}
       >
-        <>
-          <div>Drop or select your LinkedIn PDF resume, let the extractor parse the structured data, and preview it in the Harvard CV layout before downloading the DOCX template.</div>
-          <ol className="p-4 mt-4 list-decimal list-inside space-y-3 text-gray-200">
-            <li>Export your LinkedIn profile as a PDF resume from LinkedIn.</li>
-            <li>
-              Use the Upload tab to drag the file or click the drop zone and select
-              it manually.
-            </li>
-            <li>
-              Wait for the server to parse the file, then jump to the Harvard CV tab.
-            </li>
-            <li>
-              When you are ready, click the download button to save the Harvard
-              CV-themed DOCX.
-            </li>
-          </ol>
-        </>
-
-      </InfoModal>
-    </div>
+        {modal.variant === "how-it-works" ? <Steps /> : <TooManyRequestsMessage />}
+    </InfoModal>
+    </div >
   );
 }
